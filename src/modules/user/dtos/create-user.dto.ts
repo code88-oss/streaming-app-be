@@ -1,13 +1,15 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class CreateUserDto {
-  @IsEmail()
+  @IsEmail({}, { message: 'Invalid email address' })
   email: string;
 
   @IsString()
-  @MinLength(6)
-  password: string;
+  @MinLength(3, { message: 'Username must be at least 3 characters' })
+  @MaxLength(50, { message: 'Username is too long' })
+  username: string;
 
   @IsString()
-  name: string;
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
+  password: string;
 }

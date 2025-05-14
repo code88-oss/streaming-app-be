@@ -3,6 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { LoginDto } from '../dtos/login.dto';
 import { RefreshTokenDto } from '../dtos/refresh-token.dto';
+import { SignupDto } from '../dtos/signup.dto';
 
 @Controller('auth')
 export class AuthController {

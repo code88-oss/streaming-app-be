@@ -17,7 +17,7 @@ export class UserService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const userExists = await this.userRepository.findByEmail(
+    const userExists = await this.userRepository.findByEmailOrUsername(
       createUserDto.email,
     );
     if (userExists)
@@ -25,7 +25,7 @@ export class UserService {
 
     const user = new User();
     user.email = createUserDto.email;
-    user.name = createUserDto.name;
+    user.username = createUserDto.username;
     user.password = await hash(createUserDto.password, 10);
 
     return this.userRepository.create(user);
@@ -37,15 +37,13 @@ export class UserService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) throw new BadRequestException(ERROR_MESSAGES.USER_NOT_FOUND);
-    return user;
+  async findByEmailOrUsername(identifier: string): Promise<User | null> {
+    return this.userRepository.findByEmailOrUsername(identifier);
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const updateData: Partial<User> = {};
-    if (updateUserDto.name) updateData.name = updateUserDto.name;
+    if (updateUserDto.username) updateData.username = updateUserDto.username;
     if (updateUserDto.password)
       updateData.password = await hash(updateUserDto.password, 10);
     return this.userRepository.update(id, updateData);

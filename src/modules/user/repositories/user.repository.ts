@@ -11,8 +11,10 @@ export class UserRepository implements UserRepositoryInterface {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+  async findByEmailOrUsername(identifier: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: [{ email: identifier }, { username: identifier }],
+    });
   }
 
   async findById(id: number): Promise<User | null> {

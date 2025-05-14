@@ -27,7 +27,7 @@ export class UserOAuthProviderService {
     const user = await this.userService.create({
       email: profile.emails[0].value,
       password: randomBytes(16).toString('hex'), // Random password for OAuth users
-      name: profile.displayName,
+      username: profile.displayName,
     });
 
     const oauthProvider = new UserOAuthProvider();

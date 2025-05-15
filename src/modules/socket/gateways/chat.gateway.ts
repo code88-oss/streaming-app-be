@@ -48,11 +48,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     console.log('payload', payload);
-    const savedMessage = await this.chatService.saveMessage(
-      payload.roomId, // 'xQc'
-      payload.message, // 'Cc'
-      payload.senderId, // 'superadmin'
-    );
+    const savedMessage = await this.chatService.saveMessage({
+      senderId: payload.senderId,
+      roomId: payload.roomId,
+      content: payload.message,
+    });
 
     this.server.to(payload.roomId).emit('newMessage', savedMessage);
   }

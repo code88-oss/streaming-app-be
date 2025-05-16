@@ -3,6 +3,7 @@ import { User } from '../modules/user/entities/user.entity';
 import { RefreshToken } from '../modules/auth/entities/refresh-token.entity';
 import { UserOAuthProvider } from '../modules/user/entities/user-oauth-provider.entity';
 import * as dotenv from 'dotenv';
+import { Message } from 'src/modules/socket/entities/message.entity';
 
 dotenv.config();
 
@@ -30,6 +31,6 @@ export const databaseConfig: TypeOrmModuleOptions = {
   username: process.env.DATABASE_USERNAME as string,
   password: process.env.DATABASE_PASSWORD as string,
   database: process.env.DATABASE_NAME as string,
-  entities: [User, RefreshToken, UserOAuthProvider],
+  entities: [User, RefreshToken, UserOAuthProvider, Message],
   synchronize: true, // Chỉ dùng trong dev, tắt ở production
 };

@@ -1,18 +1,24 @@
-export class Message {
-  roomId: string;
-  senderId: string;
-  content: string;
-  timestamp: Date;
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
 
-  constructor(data: {
-    roomId: string;
-    senderId: string;
-    content: string;
-    timestamp?: Date;
-  }) {
-    this.roomId = data.roomId;
-    this.senderId = data.senderId;
-    this.content = data.content;
-    this.timestamp = data.timestamp ?? new Date();
-  }
+@Entity()
+export class Message {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  senderId: string;
+
+  @Column()
+  roomId: string;
+
+  @Column()
+  content: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

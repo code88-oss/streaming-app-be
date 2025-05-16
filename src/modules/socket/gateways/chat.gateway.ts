@@ -44,16 +44,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sendMessage')
   async handleMessage(
     @MessageBody()
-    payload: { roomId: string; message: string; senderId: string },
+    payload: { roomId: string; content: string; senderId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log('payload', payload);
-    const savedMessage = await this.chatService.saveMessage({
-      senderId: payload.senderId,
-      roomId: payload.roomId,
-      content: payload.message,
-    });
-
-    this.server.to(payload.roomId).emit('newMessage', savedMessage);
+    try {
+      console.log('payload', payload);
+      if (!payload.roomId || !payload.content || !payload.senderId) {
+        throw new Error('Invalid payload');
+      }
+      const savedMessage = await this.chatService.saveMessage({
+        senderId: payload.senderId,
+        roomId: payload.roomId,
+        content: payload.content,
+      });
+      this.server.to(payload.roomId).emit('newMessage', savedMessage);
+    } catch (error) {
+      console.error('Error saving message:', error);
+      client.emit('error', { message: 'Failed to save message' });
+    }
   }
 }

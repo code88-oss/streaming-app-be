@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { OAuthController } from './controllers/oauth.controller';
 import { AuthService } from './services/auth.service';
 import { RefreshTokenService } from './services/refresh-token.service';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
@@ -16,6 +15,7 @@ import { REPOSITORY_TOKENS } from 'src/shared/constants/constants';
 import { UserOAuthProviderService } from '../user/services/user-oauth-provider.service';
 import { UserOAuthProviderRepository } from './repositories/user-oauth-provider.repository';
 import { UserOAuthProvider } from '../user/entities/user-oauth-provider.entity';
+import { OAuthController } from './controllers/oauth.controller';
 
 dotenv.config();
 

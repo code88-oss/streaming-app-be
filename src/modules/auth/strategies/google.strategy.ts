@@ -1,4 +1,4 @@
-// auth/strategies/google.strategy.ts
+// google.strategy.ts
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { Strategy, Profile } from 'passport-google-oauth20';
@@ -7,21 +7,22 @@ import { Strategy, Profile } from 'passport-google-oauth20';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor() {
     super({
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: 'http://localhost:3000/api/auth/google/callback',
-      scope: ['email', 'profile'],
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: `http://localhost:8080/auth/google/callback`,
+      scope: ['profile', 'email'],
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: Profile) {
-    const { id, emails, displayName, photos } = profile;
-
+  async validate(
+    _accessToken: string,
+    _refreshToken: string,
+    profile: Profile,
+  ) {
     return {
-      googleId: id,
-      email: emails?.[0].value,
-      name: displayName,
-      avatar: photos?.[0].value,
+      id: profile.id,
+      displayName: profile.displayName,
+      email: profile.emails?.[0].value,
     };
   }
 }

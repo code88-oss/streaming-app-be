@@ -9,12 +9,14 @@ import { RefreshTokenService } from './refresh-token.service';
 import { LoginDto } from '../dtos/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ERROR_MESSAGES } from 'src/shared/constants/constants';
+import { UserOAuthProviderService } from 'src/modules/user/services/user-oauth-provider.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly userOAuthProviderService: UserOAuthProviderService,
     private readonly refreshTokenService: RefreshTokenService,
   ) {}
 
@@ -68,6 +70,20 @@ export class AuthService {
   }
   async logout(refreshToken: string): Promise<void> {
     await this.refreshTokenService.revoke(refreshToken);
+  }
+
+  async handleOAuthLogin(googleUser: {
+    id: string;
+    email: string;
+    displayName: string;
+  }) {
+    const user = await this.userOAuthProviderService.findOrCreate('google', {
+      id: googleUser.id,
+      emails: [{ value: googleUser.email }],
+      displayName: googleUser.displayName,
+    });
+
+    return this.generateTokens(user.id, user.email); // Access + Refresh Token
   }
 
   async generateTokens(

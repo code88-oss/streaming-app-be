@@ -20,35 +20,41 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { username, email, password } = loginDto;
-
-    // Kiểm tra identifier
     const identifier = username || email;
+
     if (!identifier) {
       throw new BadRequestException('Username or email is required');
     }
 
-    // Tìm người dùng
     const user = await this.userService.findByEmailOrUsername(identifier);
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    // Kiểm tra mật khẩu
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    // Tạo JWT token
+    // ✅ Tạo payload
     const payload = {
       sub: user.id,
       username: user.username,
       email: user.email,
     };
-    const accessToken = this.jwtService.sign(payload);
+
+    // ✅ Tạo access token (15 phút)
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+
+    // ✅ Tạo refresh token (7 ngày)
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    // ✅ Lưu refresh token vào DB
+    await this.refreshTokenService.create(user.id, refreshToken); // ⚠️ nhớ sửa hàm create để nhận cả token
 
     return {
       accessToken,
+      refreshToken,
       user: { id: user.id, username: user.username, email: user.email },
     };
   }
@@ -70,7 +76,10 @@ export class AuthService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const payload = { sub: userId, email };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = await this.refreshTokenService.create(userId);
+    const refreshToken = await this.refreshTokenService.create(
+      userId,
+      accessToken,
+    );
     return { accessToken, refreshToken };
   }
 }

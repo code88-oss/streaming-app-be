@@ -1,7 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 import { UserOAuthProvider } from './user-oauth-provider.entity';
-
+import { Message } from 'src/modules/socket/entities/message.entity';
+import { Stream } from 'src/modules/stream/entities/streams.entity';
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
@@ -14,7 +15,6 @@ export class User {
   password: string;
 
   @Column({ unique: true })
-  @Column()
   username: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -32,4 +32,10 @@ export class User {
 
   @OneToMany(() => UserOAuthProvider, (oauthProvider) => oauthProvider.user)
   oauthProviders: UserOAuthProvider[];
+
+  @OneToMany(() => Message, (message) => message.sender)
+  messages: Message[];
+
+  @OneToMany(() => Stream, (stream) => stream.user)
+  streams: Stream[];
 }

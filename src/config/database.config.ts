@@ -4,6 +4,11 @@ import { RefreshToken } from '../modules/auth/entities/refresh-token.entity';
 import { UserOAuthProvider } from '../modules/user/entities/user-oauth-provider.entity';
 import * as dotenv from 'dotenv';
 import { Message } from 'src/modules/socket/entities/message.entity';
+import { Room } from 'src/modules/socket/entities/room.entity';
+import { Category } from 'src/modules/stream/entities/categories.entity';
+import { StreamTag } from 'src/modules/stream/entities/stream-tags.entity';
+import { Stream } from 'src/modules/stream/entities/streams.entity';
+import { Tag } from 'src/modules/stream/entities/tags.entity';
 
 dotenv.config();
 
@@ -31,6 +36,17 @@ export const databaseConfig: TypeOrmModuleOptions = {
   username: process.env.DATABASE_USERNAME as string,
   password: process.env.DATABASE_PASSWORD as string,
   database: process.env.DATABASE_NAME as string,
-  entities: [User, RefreshToken, UserOAuthProvider, Message],
+  entities: [
+    User,
+    RefreshToken,
+    UserOAuthProvider,
+    Message,
+    Room,
+    Category,
+    StreamTag,
+    Stream,
+    Tag,
+  ],
+  schema: 'public',
   synchronize: true, // Chỉ dùng trong dev, tắt ở production
 };

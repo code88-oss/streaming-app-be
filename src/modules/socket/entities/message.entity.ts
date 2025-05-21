@@ -3,15 +3,19 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { User } from '../../user/entities/user.entity';
+import { Room } from './room.entity';
 
-@Entity()
+@Entity('messages')
 export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  senderId: string;
+  senderId: number;
 
   @Column()
   roomId: string;
@@ -21,4 +25,12 @@ export class Message {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @ManyToOne(() => User, (user) => user.messages)
+  @JoinColumn({ name: 'senderId' })
+  sender: User;
+
+  @ManyToOne(() => Room, (room) => room.messages)
+  @JoinColumn({ name: 'roomId' })
+  room: Room;
 }

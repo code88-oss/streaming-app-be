@@ -11,10 +11,11 @@ export class ChatService {
   ) {}
 
   async saveMessage(data: {
-    senderId: string;
+    senderId: number;
     roomId: string;
     content: string;
   }): Promise<Message> {
+    console.log('data', data);
     const newMessage = this.messageRepository.create({
       senderId: data.senderId,
       roomId: data.roomId,

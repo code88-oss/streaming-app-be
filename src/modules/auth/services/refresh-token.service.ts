@@ -11,15 +11,11 @@ export class RefreshTokenService {
     private readonly refreshTokenRepository: RefreshTokenRepositoryInterface,
   ) {}
 
-  async create(userId: number): Promise<string> {
-    const token = randomBytes(32).toString('hex');
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
-
+  async create(userId: number, token: string): Promise<string> {
     const refreshToken = new RefreshToken();
     refreshToken.user_id = userId;
     refreshToken.token = token;
-    refreshToken.expires_at = expiresAt;
+    refreshToken.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 ngày
     refreshToken.revoked = false;
 
     await this.refreshTokenRepository.create(refreshToken);

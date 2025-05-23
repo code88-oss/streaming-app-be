@@ -4,8 +4,12 @@ import { Category } from './entities/categories.entity';
 import { Stream } from './entities/streams.entity';
 import { Tag } from './entities/tags.entity';
 import { StreamTag } from './entities/stream-tags.entity';
+import { StreamController } from './controllers/stream.controller';
+import { StreamService } from './services/stream.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Category, Stream, Tag, StreamTag])],
+  controllers: [StreamController],
+  providers: [StreamService],
 })
 export class StreamModule {}

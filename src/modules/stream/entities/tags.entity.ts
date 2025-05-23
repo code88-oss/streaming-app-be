@@ -3,7 +3,7 @@ import { StreamTag } from './stream-tags.entity';
 
 @Entity('tags')
 export class Tag {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn()
   id: string;
 
   @Column()

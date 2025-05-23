@@ -34,6 +34,9 @@ export class RefreshToken {
   })
   updated_at: Date;
 
+  @Column({ type: 'uuid', unique: true, nullable: false })
+  jti: string;
+
   @ManyToOne(() => User, (user) => user.refreshTokens)
   @JoinColumn({ name: 'user_id' })
   user: User;

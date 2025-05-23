@@ -3,6 +3,8 @@ import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
+import { JwtService } from '@nestjs/jwt';
+import { RefreshTokenService } from '../services/refresh-token.service';
 
 interface AuthenticatedRequest extends Request {
   user: any; // hoặc bạn có thể dùng kiểu cụ thể nếu có (e.g. UserDto)
@@ -10,7 +12,11 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('auth')
 export class OAuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+    private readonly refreshTokenService: RefreshTokenService,
+  ) {}
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -23,12 +29,18 @@ export class OAuthController {
     @Res() res: Response,
   ) {
     const user = req?.user;
-
+    console.log('user', user);
     // Tạo user nếu cần, sau đó tạo JWT
     const tokens = await this.authService.handleOAuthLogin(user);
 
-    // Tuỳ bạn: gắn cookie hoặc redirect kèm access token
     res.cookie('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 3600 * 1000,
+    });
+
+    res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',

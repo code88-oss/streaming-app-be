@@ -10,6 +10,7 @@ import { LoginDto } from '../dtos/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ERROR_MESSAGES } from 'src/shared/constants/constants';
 import { UserOAuthProviderService } from 'src/modules/user/services/user-oauth-provider.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
@@ -38,36 +39,44 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    // ✅ Tạo payload
-    const payload = {
-      sub: user.id,
-      username: user.username,
-      email: user.email,
-    };
-
-    // ✅ Tạo access token (15 phút)
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-
-    // ✅ Tạo refresh token (7 ngày)
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-
-    // ✅ Lưu refresh token vào DB
-    await this.refreshTokenService.create(user.id, refreshToken); // ⚠️ nhớ sửa hàm create để nhận cả token
+    const { accessToken, refreshToken } = await this.generateTokens(
+      user.id,
+      user.email,
+      user.username,
+    );
 
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, username: user.username, email: user.email },
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      },
     };
   }
 
   async refresh(refreshToken: string): Promise<{ accessToken: string }> {
     const token = await this.refreshTokenService.validate(refreshToken);
     const user = await this.userService.findById(token.user_id);
-    const payload = { sub: user.id, email: user.email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+
+    const accessPayload = {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+      token_type: 'access',
+      scope: 'read:all',
+      jti: uuidv4(),
+    };
+
+    const accessToken = this.jwtService.sign(accessPayload, {
+      expiresIn: '15m',
+      secret: process.env.JWT_ACCESS_SECRET,
+    });
+
     return { accessToken };
   }
+
   async logout(refreshToken: string): Promise<void> {
     await this.refreshTokenService.revoke(refreshToken);
   }
@@ -83,19 +92,52 @@ export class AuthService {
       displayName: googleUser.displayName,
     });
 
-    return this.generateTokens(user.id, user.email); // Access + Refresh Token
+    return this.generateTokens(user.id, user.email, user.username); // Access + Refresh Token
   }
 
   async generateTokens(
     userId: number,
     email: string,
+    username: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    const payload = { sub: userId, email };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = await this.refreshTokenService.create(
+    // Tạo payload cho access token
+    const accessPayload = {
+      sub: userId,
+      email,
+      username,
+      token_type: 'access',
+      scope: 'read:all',
+      jti: uuidv4(),
+    };
+
+    // Tạo payload cho refresh token
+    const refreshPayload = {
+      sub: userId,
+      email,
+      username,
+      token_type: 'refresh',
+      jti: uuidv4(),
+    };
+
+    // Tạo access token
+    const accessToken = this.jwtService.sign(accessPayload, {
+      expiresIn: '15m',
+      secret: process.env.JWT_ACCESS_SECRET,
+    });
+
+    // Tạo refresh token
+    const refreshToken = this.jwtService.sign(refreshPayload, {
+      expiresIn: '7d',
+      secret: process.env.JWT_REFRESH_SECRET,
+    });
+
+    // Lưu refresh token vào DB
+    await this.refreshTokenService.create(
       userId,
-      accessToken,
+      refreshToken,
+      refreshPayload.jti,
     );
+
     return { accessToken, refreshToken };
   }
 }

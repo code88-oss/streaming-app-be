@@ -44,9 +44,8 @@ export class Stream {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
-  @ManyToOne(() => Channel, (channel) => channel.streams)
-  @JoinColumn({ name: 'channelId' })
-  channel: Channel;
+  @ManyToOne(() => Channel, { nullable: true, onDelete: 'SET NULL' })
+  channel: Channel | null;
 
   @OneToMany(() => StreamView, (view) => view.stream)
   streamViews: StreamView[];

@@ -1,4 +1,5 @@
-import { IsArray, IsIn, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateStreamDto {
   @IsOptional()
@@ -7,13 +8,19 @@ export class UpdateStreamDto {
 
   @IsOptional()
   @IsString()
-  categoryId?: string;
+  thumbnailUrl?: string;
 
   @IsOptional()
-  @IsIn(['live', 'offline'])
-  status?: string;
+  @IsString()
+  status?: 'live' | 'offline';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  categoryId?: number;
 
   @IsOptional()
   @IsArray()
-  tagIds?: number[];
+  @IsString({ each: true })
+  tagIds?: string[];
 }

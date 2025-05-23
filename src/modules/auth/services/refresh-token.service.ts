@@ -10,14 +10,14 @@ export class RefreshTokenService {
     @Inject(REPOSITORY_TOKENS.REFRESH_TOKEN)
     private readonly refreshTokenRepository: RefreshTokenRepositoryInterface,
   ) {}
-
-  async create(userId: number, token: string, jti?: string): Promise<string> {
+  async create(userId: string, token: string, jti?: string): Promise<string> {
     const refreshToken = new RefreshToken();
-    refreshToken.user_id = userId;
+    refreshToken.user = { id: userId } as any;
     refreshToken.token = token;
     refreshToken.jti = jti || uuidv4();
     refreshToken.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 ngày
     refreshToken.revoked = false;
+
     await this.refreshTokenRepository.create(refreshToken);
     return token;
   }

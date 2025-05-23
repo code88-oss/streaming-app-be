@@ -14,9 +14,6 @@ export class StreamTag {
   id: number;
 
   @Column()
-  streamId: string;
-
-  @Column()
   tagId: string;
 
   @ManyToOne(() => Stream, (stream) => stream.streamTags)

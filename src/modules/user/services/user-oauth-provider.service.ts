@@ -15,23 +15,24 @@ export class UserOAuthProviderService {
   ) {}
 
   async findOrCreate(provider: string, profile: any): Promise<User> {
-    let userOAuthProvider =
+    const userOAuthProvider =
       await this.userOAuthProviderRepository.findByProviderAndId(
         provider,
         profile.id,
       );
+
     if (userOAuthProvider) {
-      return this.userService.findById(userOAuthProvider.user_id);
+      return this.userService.findById(userOAuthProvider.user.id);
     }
 
     const user = await this.userService.create({
       email: profile.emails[0].value,
-      password: randomBytes(16).toString('hex'), // Random password for OAuth users
+      password: randomBytes(16).toString('hex'),
       username: profile.displayName,
     });
 
     const oauthProvider = new UserOAuthProvider();
-    oauthProvider.user_id = user.id;
+    oauthProvider.user = user;
     oauthProvider.provider = provider;
     oauthProvider.provider_id = profile.id;
 

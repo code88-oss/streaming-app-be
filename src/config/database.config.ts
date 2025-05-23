@@ -9,6 +9,8 @@ import { Category } from 'src/modules/stream/entities/categories.entity';
 import { StreamTag } from 'src/modules/stream/entities/stream-tags.entity';
 import { Stream } from 'src/modules/stream/entities/streams.entity';
 import { Tag } from 'src/modules/stream/entities/tags.entity';
+import { Channel } from 'src/modules/stream/entities/channel.entity';
+import { StreamView } from 'src/modules/stream/entities/stream-views.entity';
 
 dotenv.config();
 
@@ -46,6 +48,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     StreamTag,
     Stream,
     Tag,
+    Channel,
+    StreamView,
   ],
   schema: 'public',
   synchronize: true, // Chỉ dùng trong dev, tắt ở production

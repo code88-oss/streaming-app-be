@@ -5,28 +5,38 @@ import { Stream } from '../entities/streams.entity';
 import { StreamTag } from '../entities/stream-tags.entity';
 import { CreateStreamDto } from '../dtos/create-stream.dto';
 import { UpdateStreamDto } from '../dtos/update-stream.dto';
+import { User } from 'src/modules/user/entities/user.entity';
+import { Tag } from '../entities/tags.entity';
 
 @Injectable()
 export class StreamService {
   constructor(
-    @InjectRepository(Stream) private streamRepo: Repository<Stream>,
-    @InjectRepository(StreamTag) private streamTagRepo: Repository<StreamTag>,
+    @InjectRepository(Stream) private readonly streamRepo: Repository<Stream>,
+    @InjectRepository(StreamTag)
+    private readonly streamTagRepo: Repository<StreamTag>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,
   ) {}
 
-  async createStream(userId: number, dto: CreateStreamDto): Promise<Stream> {
+  async createStream(userId: string, dto: CreateStreamDto): Promise<Stream> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
     const stream = this.streamRepo.create({
       ...dto,
-      userId,
       status: 'live',
+      user,
     });
-
-    console.log('userId', userId);
 
     const savedStream = await this.streamRepo.save(stream);
 
     if (dto.tagIds?.length) {
-      const streamTags = dto.tagIds.map((tagId) =>
-        this.streamTagRepo.create({ streamId: savedStream.id, tagId }),
+      const tags = await this.tagRepo.findByIds(dto.tagIds);
+      const streamTags = tags.map((tag) =>
+        this.streamTagRepo.create({
+          stream: savedStream,
+          tag,
+        }),
       );
       await this.streamTagRepo.save(streamTags);
     }
@@ -37,13 +47,27 @@ export class StreamService {
   async getAllStreams(): Promise<Stream[]> {
     return this.streamRepo.find({
       where: { status: 'live' },
-      relations: ['user', 'category', 'streamTags', 'streamTags.tag'],
+      relations: [
+        'user',
+        'category',
+        'channel',
+        'streamTags',
+        'streamTags.tag',
+      ],
     });
   }
 
-  async updateStream(id: string, userId: string, dto: UpdateStreamDto) {
+  async updateStream(
+    id: string,
+    userId: string,
+    dto: UpdateStreamDto,
+  ): Promise<Stream> {
     const stream = await this.streamRepo.findOne({
-      where: { id, userId: Number(userId) },
+      where: {
+        id,
+        user: { id: userId },
+      },
+      relations: ['user'],
     });
 
     if (!stream) {
@@ -54,7 +78,7 @@ export class StreamService {
       stream.endedAt = new Date();
     }
 
-    const updated = Object.assign(stream, dto);
-    return await this.streamRepo.save(updated);
+    Object.assign(stream, dto);
+    return this.streamRepo.save(stream);
   }
 }

@@ -58,7 +58,8 @@ export class AuthService {
 
   async refresh(refreshToken: string): Promise<{ accessToken: string }> {
     const token = await this.refreshTokenService.validate(refreshToken);
-    const user = await this.userService.findById(token.user_id);
+
+    const user = token.user;
 
     const accessPayload = {
       sub: user.id,
@@ -86,6 +87,7 @@ export class AuthService {
     email: string;
     displayName: string;
   }) {
+    console.log('id', googleUser.id);
     const user = await this.userOAuthProviderService.findOrCreate('google', {
       id: googleUser.id,
       emails: [{ value: googleUser.email }],
@@ -96,7 +98,7 @@ export class AuthService {
   }
 
   async generateTokens(
-    userId: number,
+    userId: string,
     email: string,
     username: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {

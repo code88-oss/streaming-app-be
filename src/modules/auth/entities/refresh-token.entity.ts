@@ -13,9 +13,6 @@ export class RefreshToken {
   id: number;
 
   @Column()
-  user_id: number;
-
-  @Column()
   token: string;
 
   @Column({ type: 'timestamp' })

@@ -9,11 +9,8 @@ import { User } from './user.entity';
 
 @Entity('user_oauth_providers')
 export class UserOAuthProvider {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column()
-  user_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   provider: string;

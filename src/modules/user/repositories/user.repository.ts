@@ -17,7 +17,7 @@ export class UserRepository implements UserRepositoryInterface {
     });
   }
 
-  async findById(id: number): Promise<User | null> {
+  async findById(id: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
   }
 
@@ -25,7 +25,7 @@ export class UserRepository implements UserRepositoryInterface {
     return this.userRepository.save(user);
   }
 
-  async update(id: number, user: Partial<User>): Promise<User> {
+  async update(id: string, user: Partial<User>): Promise<User> {
     await this.userRepository.update(id, user);
     const updatedUser = await this.findById(id);
     if (!updatedUser) {
@@ -34,7 +34,7 @@ export class UserRepository implements UserRepositoryInterface {
     return updatedUser;
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     await this.userRepository.delete(id);
   }
 }

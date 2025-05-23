@@ -6,9 +6,23 @@ import { Tag } from './entities/tags.entity';
 import { StreamTag } from './entities/stream-tags.entity';
 import { StreamController } from './controllers/stream.controller';
 import { StreamService } from './services/stream.service';
+import { Channel } from './entities/channel.entity';
+import { StreamView } from './entities/stream-views.entity';
+import { User } from '../user/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Category, Stream, Tag, StreamTag])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Category,
+      Stream,
+      Tag,
+      StreamTag,
+      Channel,
+      StreamService,
+      StreamView,
+      User,
+    ]),
+  ],
   controllers: [StreamController],
   providers: [StreamService],
 })

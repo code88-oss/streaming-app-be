@@ -13,12 +13,10 @@ export class UserOAuthProviderRepository
     private readonly userOAuthProviderRepository: Repository<UserOAuthProvider>,
   ) {}
 
-  async findByProviderAndId(
-    provider: string,
-    providerId: string,
-  ): Promise<UserOAuthProvider | null> {
+  async findByProviderAndId(provider: string, providerId: string) {
     return this.userOAuthProviderRepository.findOne({
       where: { provider, provider_id: providerId },
+      relations: ['user'],
     });
   }
 

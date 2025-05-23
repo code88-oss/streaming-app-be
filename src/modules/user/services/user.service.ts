@@ -31,7 +31,7 @@ export class UserService {
     return this.userRepository.create(user);
   }
 
-  async findById(id: number): Promise<User> {
+  async findById(id: string): Promise<User> {
     const user = await this.userRepository.findById(id);
     if (!user) throw new BadRequestException(ERROR_MESSAGES.USER_NOT_FOUND);
     return user;
@@ -41,7 +41,7 @@ export class UserService {
     return this.userRepository.findByEmailOrUsername(identifier);
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const updateData: Partial<User> = {};
     if (updateUserDto.username) updateData.username = updateUserDto.username;
     if (updateUserDto.password)
@@ -49,7 +49,7 @@ export class UserService {
     return this.userRepository.update(id, updateData);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     await this.userRepository.delete(id);
   }
 }

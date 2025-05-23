@@ -25,18 +25,18 @@ export class UserController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async findById(@Param('id') id: string) {
-    return this.userService.findById(Number(id));
+    return this.userService.findById(id);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(Number(id), updateUserDto);
+    return this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string) {
-    return this.userService.delete(Number(id));
+    return this.userService.delete(id);
   }
 }

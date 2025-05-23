@@ -10,6 +10,8 @@ import {
 import { User } from '../../user/entities/user.entity';
 import { Category } from './categories.entity';
 import { StreamTag } from './stream-tags.entity';
+import { Channel } from './channel.entity';
+import { StreamView } from './stream-views.entity';
 
 @Entity('streams')
 export class Stream {
@@ -17,27 +19,21 @@ export class Stream {
   id: string;
 
   @Column()
-  userId: number;
-
-  @Column()
   title: string;
 
   @Column()
-  categoryId: string;
+  thumbnailUrl: string;
 
   @Column()
   status: string;
 
   @Column()
-  streamKey: string;
+  views: number;
 
-  @Column()
-  serverUrl: string;
-
-  @CreateDateColumn()
+  @Column({ type: 'timestamp' })
   startedAt: Date;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp' })
   endedAt: Date;
 
   @ManyToOne(() => User, (user) => user.streams)
@@ -48,6 +44,19 @@ export class Stream {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
+  @ManyToOne(() => Channel, (channel) => channel.streams)
+  @JoinColumn({ name: 'channelId' })
+  channel: Channel;
+
+  @OneToMany(() => StreamView, (view) => view.stream)
+  streamViews: StreamView[];
+
   @OneToMany(() => StreamTag, (streamTag) => streamTag.stream)
   streamTags: StreamTag[];
+
+  @Column()
+  streamKey: string;
+
+  @Column()
+  serverUrl: string;
 }

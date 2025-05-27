@@ -17,9 +17,6 @@ export class Channel {
   id: string;
 
   @Column()
-  userId: number;
-
-  @Column()
   name: string;
 
   @Column({ nullable: true })

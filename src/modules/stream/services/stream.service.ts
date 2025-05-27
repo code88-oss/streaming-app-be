@@ -1,72 +1,76 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Stream } from '../entities/streams.entity';
 import { StreamTag } from '../entities/stream-tags.entity';
-import { CreateStreamDto } from '../dtos/create-stream.dto';
-import { UpdateStreamDto } from '../dtos/update-stream.dto';
-import { User } from 'src/modules/user/entities/user.entity';
 import { Tag } from '../entities/tags.entity';
-import { Channel } from '../entities/channel.entity';
-import { In } from 'typeorm';
+import { User } from 'src/modules/user/entities/user.entity';
+import { StreamGateway } from 'src/modules/stream/gateways/stream.gateway';
+import { CreateStreamDto } from '../dtos/create-stream.dto';
 
 @Injectable()
 export class StreamService {
   constructor(
-    @InjectRepository(Stream) private readonly streamRepo: Repository<Stream>,
+    @InjectRepository(Stream)
+    private streamRepo: Repository<Stream>,
     @InjectRepository(StreamTag)
-    private readonly streamTagRepo: Repository<StreamTag>,
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
-    @InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,
-    @InjectRepository(Channel)
-    private readonly channelRepo: Repository<Channel>,
+    private streamTagRepo: Repository<StreamTag>,
+    @InjectRepository(Tag)
+    private tagRepo: Repository<Tag>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
+    private streamGateway: StreamGateway,
   ) {}
 
-  // async createStream(userId: string, dto: CreateStreamDto): Promise<Stream> {
-  //   const user = await this.userRepo.findOne({ where: { id: userId } });
-  //   if (!user) throw new NotFoundException('User not found');
+  async createStream(dto: CreateStreamDto, userId: string): Promise<Stream> {
+    // const existingLiveStream = await this.streamRepo.findOne({
+    //   where: {
+    //     user: { id: userId },
+    //     status: 'live',
+    //   },
+    // });
 
-  //   const channel = await this.channelRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-  //   if (!channel) throw new NotFoundException('Channel not found');
+    // if (existingLiveStream) {
+    //   throw new BadRequestException('User already has an active stream.');
+    // }
 
-  //   const stream = this.streamRepo.create({
-  //     ...dto,
-  //     status: 'live',
-  //     user,
-  //     channel,
-  //   });
+    if (dto.tagIds?.length) {
+      const existingTags = await this.tagRepo.find({
+        where: { id: In(dto.tagIds) },
+      });
+      const existingTagIds = existingTags.map((tag) => tag.id);
+      const invalidTagIds = dto.tagIds.filter(
+        (id) => !existingTagIds.includes(id),
+      );
+      if (invalidTagIds.length) {
+        throw new BadRequestException(
+          `Invalid tag IDs: ${invalidTagIds.join(', ')}`,
+        );
+      }
+    }
 
-  //   const savedStream = await this.streamRepo.save(stream);
+    // Fetch user
 
-  //   if (dto.tagIds?.length) {
-  //     const tags = await this.tagRepo.find({
-  //       where: { id: In(dto.tagIds) },
-  //     });
-
-  //     const streamTags = tags.map((tag) =>
-  //       this.streamTagRepo.create({ stream: savedStream, tag }),
-  //     );
-  //     await this.streamTagRepo.save(streamTags);
-  //   }
-
-  //   return savedStream;
-  // }
-
-  async createStream(userId: string, dto: CreateStreamDto): Promise<Stream> {
+    console.log('userId', userId);
     const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
 
+    // Create the stream
     const stream = this.streamRepo.create({
       ...dto,
-      status: 'live',
+      serverUrl: dto.streamUrl,
       user,
-      channel: null,
+      startedAt: new Date(),
+      status: 'live',
+      thumbnailUrl:
+        dto.thumbnailUrl || 'https://default-thumbnail.com/default.jpg',
     });
 
     const savedStream = await this.streamRepo.save(stream);
 
+    // Handle tags if provided
     if (dto.tagIds?.length) {
       const tags = await this.tagRepo.find({
         where: { id: In(dto.tagIds) },
@@ -78,39 +82,54 @@ export class StreamService {
       await this.streamTagRepo.save(streamTags);
     }
 
+    console.log(
+      `Notifying streamStatus for userId: ${userId}, streamId: ${savedStream.id}`,
+    );
+
+    // Notify via WebSocket
+    this.streamGateway.notifyStreamStatus(
+      userId,
+      savedStream.id,
+      'live',
+      'Stream started successfully',
+    );
+
     return savedStream;
   }
 
-  async updateStream(
-    id: string,
+  async updateStreamStatus(
+    streamId: string,
     userId: string,
-    dto: UpdateStreamDto,
+    status: 'live' | 'offline',
   ): Promise<Stream> {
     const stream = await this.streamRepo.findOne({
-      where: { id, user: { id: userId } },
-      relations: ['user'],
+      where: { id: streamId, user: { id: userId } },
     });
-    if (!stream)
-      throw new NotFoundException('Stream not found or unauthorized');
-
-    if (dto.status === 'offline') {
-      stream.endedAt = new Date();
+    if (!stream) {
+      throw new BadRequestException('Stream not found or unauthorized');
     }
 
-    Object.assign(stream, dto);
-    return this.streamRepo.save(stream);
+    stream.status = status;
+    if (status === 'offline') {
+      stream.endedAt = new Date();
+    }
+    const updatedStream = await this.streamRepo.save(stream);
+
+    // Notify via WebSocket
+    this.streamGateway.notifyStreamStatus(
+      userId,
+      streamId,
+      status,
+      `Stream ${status === 'live' ? 'started' : 'stopped'}`,
+    );
+
+    return updatedStream;
   }
 
   async getAllLiveStreams(): Promise<Stream[]> {
     return this.streamRepo.find({
       where: { status: 'live' },
-      relations: [
-        'user',
-        'channel',
-        'category',
-        'streamTags',
-        'streamTags.tag',
-      ],
+      relations: ['user', 'category', 'streamTags', 'streamTags.tag'],
       order: { startedAt: 'DESC' },
     });
   }

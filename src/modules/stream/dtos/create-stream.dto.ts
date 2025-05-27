@@ -10,12 +10,17 @@ export class CreateStreamDto {
   thumbnailUrl?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  categoryId?: number;
+  @IsString()
+  categoryId?: string;
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tagIds?: string[];
+
+  @IsString()
+  streamUrl: string;
+
+  @IsString()
+  streamKey: string;
 }

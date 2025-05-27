@@ -37,14 +37,14 @@ export class OAuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 3600 * 1000,
+      maxAge: 3600 * 1000000,
     });
 
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 3600 * 1000,
+      maxAge: 3600 * 1000000,
     });
 
     // Redirect về frontend (Next.js)

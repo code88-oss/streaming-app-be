@@ -27,13 +27,13 @@ export class Stream {
   @Column()
   status: string;
 
-  @Column()
+  @Column({ nullable: true })
   views: number;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   startedAt: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   endedAt: Date;
 
   @ManyToOne(() => User, (user) => user.streams)

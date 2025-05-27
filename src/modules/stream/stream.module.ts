@@ -9,6 +9,11 @@ import { StreamService } from './services/stream.service';
 import { Channel } from './entities/channel.entity';
 import { StreamView } from './entities/stream-views.entity';
 import { User } from '../user/entities/user.entity';
+import { TagController } from './controllers/tags.controller';
+import { CategoryController } from './controllers/categories.controller';
+import { TagService } from './services/tags.service';
+import { CategoryService } from './services/categories.service';
+import { StreamGateway } from './gateways/stream.gateway';
 
 @Module({
   imports: [
@@ -23,7 +28,7 @@ import { User } from '../user/entities/user.entity';
       User,
     ]),
   ],
-  controllers: [StreamController],
-  providers: [StreamService],
+  controllers: [StreamController, TagController, CategoryController],
+  providers: [StreamService, TagService, CategoryService, StreamGateway],
 })
 export class StreamModule {}

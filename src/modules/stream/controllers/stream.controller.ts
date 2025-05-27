@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CreateStreamDto } from '../dtos/create-stream.dto';
@@ -28,7 +29,14 @@ export class StreamController {
     return this.streamService.createStream(dto, userId);
   }
 
-  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard)
+  @Get('status')
+  async getMyStreamStatus(@Req() req) {
+    const userId = req.user.sub; // hoặc req.user.id tùy
+    return this.streamService.getStatusByUserId(userId);
+  }
+
+  @Patch(':id')
   @UseGuards(JwtAuthGuard)
   async updateStreamStatus(
     @Param('id') streamId: string,

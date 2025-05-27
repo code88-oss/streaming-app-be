@@ -23,16 +23,16 @@ export class StreamService {
   ) {}
 
   async createStream(dto: CreateStreamDto, userId: string): Promise<Stream> {
-    // const existingLiveStream = await this.streamRepo.findOne({
-    //   where: {
-    //     user: { id: userId },
-    //     status: 'live',
-    //   },
-    // });
+    const existingLiveStream = await this.streamRepo.findOne({
+      where: {
+        user: { id: userId },
+        status: 'live',
+      },
+    });
 
-    // if (existingLiveStream) {
-    //   throw new BadRequestException('User already has an active stream.');
-    // }
+    if (existingLiveStream) {
+      throw new BadRequestException('User already has an active stream.');
+    }
 
     if (dto.tagIds?.length) {
       const existingTags = await this.tagRepo.find({
@@ -95,6 +95,27 @@ export class StreamService {
     );
 
     return savedStream;
+  }
+
+  async getStatusByUserId(userId: string) {
+    const stream = await this.streamRepo.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+
+    if (!stream) {
+      return {
+        streamId: null,
+        status: 'offline',
+        message: 'No active stream found',
+      };
+    }
+
+    return {
+      streamId: stream.id,
+      status: stream.status,
+      message: stream.status === 'live' ? null : 'Stream is not live',
+    };
   }
 
   async updateStreamStatus(

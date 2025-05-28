@@ -15,19 +15,31 @@ export class ChatService {
     roomId: string;
     content: string;
   }): Promise<Message> {
-    console.log('data', data);
     const newMessage = this.messageRepository.create({
       senderId: data.senderId,
       roomId: data.roomId,
       content: data.content,
     });
-    return this.messageRepository.save(newMessage);
+
+    const saved = await this.messageRepository.save(newMessage);
+
+    const messageWithSender = await this.messageRepository.findOne({
+      where: { id: saved.id },
+      relations: ['sender'],
+    });
+
+    if (!messageWithSender) {
+      throw new Error('Message not found after saving');
+    }
+
+    return messageWithSender;
   }
 
   async getMessages(roomId: string): Promise<Message[]> {
     return this.messageRepository.find({
       where: { roomId },
       order: { createdAt: 'DESC' },
+      relations: ['sender'], // 👈 Nếu muốn lấy tên người gửi khi load tin nhắn cũ
     });
   }
 }

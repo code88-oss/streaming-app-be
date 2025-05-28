@@ -14,6 +14,7 @@ import { CategoryController } from './controllers/categories.controller';
 import { TagService } from './services/tags.service';
 import { CategoryService } from './services/categories.service';
 import { StreamGateway } from './gateways/stream.gateway';
+import { Room } from '../socket/entities/room.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { StreamGateway } from './gateways/stream.gateway';
       Channel,
       StreamService,
       StreamView,
+      Room,
       User,
     ]),
   ],

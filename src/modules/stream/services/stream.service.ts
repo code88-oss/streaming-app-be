@@ -7,6 +7,7 @@ import { Tag } from '../entities/tags.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { StreamGateway } from 'src/modules/stream/gateways/stream.gateway';
 import { CreateStreamDto } from '../dtos/create-stream.dto';
+import { Room } from 'src/modules/socket/entities/room.entity';
 
 @Injectable()
 export class StreamService {
@@ -19,6 +20,8 @@ export class StreamService {
     private tagRepo: Repository<Tag>,
     @InjectRepository(User)
     private userRepo: Repository<User>,
+    @InjectRepository(Room)
+    private roomRepo: Repository<Room>,
     private streamGateway: StreamGateway,
   ) {}
 
@@ -50,8 +53,6 @@ export class StreamService {
     }
 
     // Fetch user
-
-    console.log('userId', userId);
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -69,6 +70,12 @@ export class StreamService {
     });
 
     const savedStream = await this.streamRepo.save(stream);
+
+    const room = this.roomRepo.create({
+      id: savedStream.id, // gán thủ công
+      name: `${user.username}'s Room`, // hoặc để null
+    });
+    await this.roomRepo.save(room);
 
     // Handle tags if provided
     if (dto.tagIds?.length) {

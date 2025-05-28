@@ -23,23 +23,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly chatService: ChatService) {}
 
   handleConnection(client: Socket) {
-    // Xử lý khi client kết nối
-    console.log(`Client connected: ${client.id}`);
+    const userId = client.handshake.query.userId;
+    console.log(`Client connected: ${client.id}, userId: ${userId}`);
   }
 
   handleDisconnect(client: Socket) {
-    // Xử lý khi client ngắt kết nối
-    console.log(`Client disconnected: ${client.id}`);
+    const userId = client.handshake.query.userId;
+    console.log(`Client disconnected: ${client.id}, userId: ${userId}`);
   }
 
   @SubscribeMessage('joinRoom')
   handleJoinRoom(
-    @MessageBody() roomId: string,
+    @MessageBody() data: { roomId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log('joinedRoom', roomId);
+    const userId = client.handshake.query.userId;
+    const { roomId } = data;
+
+    if (!roomId || !userId) {
+      client.emit('error', { message: 'Missing roomId or userId' });
+      return;
+    }
+
     client.join(roomId);
-    client.emit('joinedRoom', roomId);
+    console.log(`User ${userId} joined room ${roomId}`);
+    client.emit('joinedRoom', { roomId });
   }
 
   @SubscribeMessage('sendMessage')
@@ -48,22 +56,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: { roomId: string; content: string; senderId: number },
     @ConnectedSocket() client: Socket,
   ) {
+    const { roomId, content, senderId } = payload;
+
+    if (!roomId || !content || !senderId) {
+      client.emit('error', { message: 'Invalid payload' });
+      return;
+    }
+
     try {
-      const { roomId, content, senderId } = payload;
-
-      if (!roomId || !content || !senderId) {
-        throw new Error('Invalid payload');
-      }
-
       const savedMessage = await this.chatService.saveMessage({
         senderId,
         roomId,
         content,
       });
 
-      this.server.to(roomId).emit('newMessage', savedMessage);
+      // ✅ Trích xuất dữ liệu sạch gửi về client
+      const cleanMessage = {
+        id: savedMessage.id,
+        content: savedMessage.content,
+        createdAt: savedMessage.createdAt,
+        sender: {
+          id: savedMessage.sender.id,
+          username: savedMessage.sender.username,
+        },
+      };
+
+      this.server.to(roomId).emit('newMessage', cleanMessage);
+      client.emit('messageSent', cleanMessage);
     } catch (error) {
-      console.error('Error saving message:', error);
+      console.error('❌ Error saving message:', error);
       client.emit('error', { message: 'Failed to save message' });
     }
   }

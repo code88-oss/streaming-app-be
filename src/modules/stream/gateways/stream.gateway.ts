@@ -1,5 +1,4 @@
 import {
-  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
   OnGatewayConnection,
@@ -17,32 +16,31 @@ export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
+  private viewersMap = new Map<string, Set<string>>(); // streamId => Set<socketId>
+
   handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
-    // Join user-specific room based on userId (sent during handshake)
-    const userId = client.handshake.query.userId as string;
-    if (userId) {
-      client.join(userId);
-      console.log(`Client ${client.id} joined room: ${userId}`);
+    const streamId = client.handshake.query.streamId as string;
+    if (streamId) {
+      client.join(streamId);
+
+      const viewers = this.viewersMap.get(streamId) || new Set();
+      viewers.add(client.id);
+      this.viewersMap.set(streamId, viewers);
+
+      this.broadcastViewerCount(streamId);
     }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    this.viewersMap.forEach((viewers, streamId) => {
+      if (viewers.delete(client.id)) {
+        this.broadcastViewerCount(streamId);
+      }
+    });
   }
 
-  // Emit stream status update to the user's room
-  notifyStreamStatus(
-    userId: string,
-    streamId: string,
-    status: 'live' | 'offline',
-    message?: string,
-  ) {
-    this.server.to(userId).emit('streamStatus', {
-      streamId,
-      status,
-      message,
-      timestamp: new Date().toISOString(),
-    });
+  private broadcastViewerCount(streamId: string) {
+    const viewers = this.viewersMap.get(streamId);
+    this.server.to(streamId).emit('viewerCount', viewers?.size || 0);
   }
 }

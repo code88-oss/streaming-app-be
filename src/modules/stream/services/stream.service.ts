@@ -1,13 +1,18 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Stream } from '../entities/streams.entity';
 import { StreamTag } from '../entities/stream-tags.entity';
 import { Tag } from '../entities/tags.entity';
 import { User } from 'src/modules/user/entities/user.entity';
-import { StreamGateway } from 'src/modules/stream/gateways/stream.gateway';
 import { CreateStreamDto } from '../dtos/create-stream.dto';
 import { Room } from 'src/modules/socket/entities/room.entity';
+import { UpdateStreamInfoDto } from '../dtos/update-stream-info.dto';
+import { Category } from '../entities/categories.entity';
 
 @Injectable()
 export class StreamService {
@@ -22,7 +27,8 @@ export class StreamService {
     private userRepo: Repository<User>,
     @InjectRepository(Room)
     private roomRepo: Repository<Room>,
-    private streamGateway: StreamGateway,
+    @InjectRepository(Category)
+    private categoryRepo: Repository<Category>,
   ) {}
 
   async createStream(dto: CreateStreamDto, userId: string): Promise<Stream> {
@@ -93,18 +99,11 @@ export class StreamService {
       `Notifying streamStatus for userId: ${userId}, streamId: ${savedStream.id}`,
     );
 
-    // Notify via WebSocket
-    this.streamGateway.notifyStreamStatus(
-      userId,
-      savedStream.id,
-      'live',
-      'Stream started successfully',
-    );
-
     return savedStream;
   }
 
   async getStatusByUserId(userId: string) {
+    console.log('userId', userId);
     const stream = await this.streamRepo.findOne({
       where: { user: { id: userId } },
       relations: ['user'],
@@ -112,6 +111,7 @@ export class StreamService {
 
     if (!stream) {
       return {
+        userId,
         streamId: null,
         status: 'offline',
         message: 'No active stream found',
@@ -119,6 +119,7 @@ export class StreamService {
     }
 
     return {
+      userId: userId,
       streamId: stream.id,
       status: stream.status,
       message: stream.status === 'live' ? null : 'Stream is not live',
@@ -143,14 +144,6 @@ export class StreamService {
     }
     const updatedStream = await this.streamRepo.save(stream);
 
-    // Notify via WebSocket
-    this.streamGateway.notifyStreamStatus(
-      userId,
-      streamId,
-      status,
-      `Stream ${status === 'live' ? 'started' : 'stopped'}`,
-    );
-
     return updatedStream;
   }
 
@@ -160,5 +153,77 @@ export class StreamService {
       relations: ['user', 'category', 'streamTags', 'streamTags.tag'],
       order: { startedAt: 'DESC' },
     });
+  }
+
+  async updateStreamInfo(
+    streamId: string,
+    userId: string,
+    dto: UpdateStreamInfoDto,
+  ): Promise<Stream> {
+    const stream = await this.streamRepo.findOne({
+      where: { id: streamId, user: { id: userId } },
+      relations: ['streamTags'],
+    });
+
+    if (!stream) {
+      throw new NotFoundException('Stream not found or unauthorized');
+    }
+
+    // Cập nhật các trường cơ bản
+    if (dto.title) stream.title = dto.title;
+    if (dto.thumbnailUrl) stream.thumbnailUrl = dto.thumbnailUrl;
+    if (dto.categoryId) {
+      const category = await this.categoryRepo.findOne({
+        where: { id: dto.categoryId },
+      });
+      if (!category) throw new BadRequestException('Invalid categoryId');
+      stream.category = category;
+    }
+
+    // Update tagIds nếu có
+    if (dto.tagIds) {
+      const tags = await this.tagRepo.findBy({ id: In(dto.tagIds) });
+
+      // Xoá streamTags cũ
+      await this.streamTagRepo.delete({ stream: { id: streamId } });
+
+      // Gán mới
+      const newStreamTags = tags.map((tag) =>
+        this.streamTagRepo.create({ stream, tag }),
+      );
+      await this.streamTagRepo.save(newStreamTags);
+    }
+
+    return this.streamRepo.save(stream);
+  }
+
+  async getStreamByUserId(userId: string): Promise<Stream> {
+    const stream = await this.streamRepo.findOne({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+      relations: ['user', 'category', 'streamTags', 'streamTags.tag'],
+    });
+
+    if (!stream) {
+      throw new NotFoundException(`Stream for user ${userId} not found`);
+    }
+
+    return stream;
+  }
+
+  async getStreamByStreamId(streamId: string): Promise<Stream> {
+    const stream = await this.streamRepo.findOne({
+      where: { id: streamId },
+      relations: ['user', 'category', 'streamTags', 'streamTags.tag'],
+    });
+
+    if (!stream) {
+      throw new NotFoundException('Stream not found');
+    }
+
+    return stream;
   }
 }

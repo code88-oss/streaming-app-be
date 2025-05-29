@@ -15,9 +15,9 @@ export class UpdateStreamDto {
   status?: 'live' | 'offline';
 
   @IsOptional()
-  @Type(() => Number)
+  @IsArray()
   @IsNumber()
-  categoryId?: number;
+  categoryId?: number[];
 
   @IsOptional()
   @IsArray()

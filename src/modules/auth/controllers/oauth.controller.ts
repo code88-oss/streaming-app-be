@@ -26,7 +26,7 @@ export class OAuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(
     @Req() req: AuthenticatedRequest,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res,
   ) {
     const user = req?.user;
     console.log('user', user);
@@ -35,16 +35,18 @@ export class OAuthController {
 
     res.cookie('accessToken', tokens.accessToken, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: 3600 * 1000000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: 3600 * 1000000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     // Redirect về frontend (Next.js)

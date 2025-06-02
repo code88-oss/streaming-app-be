@@ -15,7 +15,7 @@ import {
 class EmailOrUsernameConstraint implements ValidatorConstraintInterface {
   validate(_value: any, args: ValidationArguments) {
     const { username, email } = args.object as any;
-    return (username && !email) || (!username && email); // Phải có một và chỉ một trường
+    return (username && !email) || (!username && email);
   }
 
   defaultMessage() {

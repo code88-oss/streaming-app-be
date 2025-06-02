@@ -35,14 +35,14 @@ export class OAuthController {
 
     res.cookie('accessToken', tokens.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      // secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: 3600 * 1000000,
     });
 
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      // secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: 3600 * 1000000,
     });
